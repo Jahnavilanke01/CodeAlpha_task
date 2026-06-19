@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness Tracker App</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+input, select{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:5px;
+    background:#007bff;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#0056b3;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+}
+
+.summary-box{
+    background:#ffffff;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.progress-container{
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+    height:25px;
+    margin-top:10px;
+}
+
+.progress-bar{
+    height:100%;
+    width:0%;
+    color:white;
+    text-align:center;
+    line-height:25px;
+    background:#28a745;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+table, th, td{
+    border:1px solid #ccc;
+}
+
+th, td{
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#007bff;
+    color:white;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🏃 Daily Fitness Tracker</h1>
+
+<div class="card">
+    <h2>Log Fitness Activity</h2>
+
+    <input type="date" id="date">
+
+    <input type="number" id="steps" placeholder="Steps Walked">
+
+    <select id="workout">
+        <option value="">Select Workout</option>
+        <option>Running</option>
+        <option>Walking</option>
+        <option>Cycling</option>
+        <option>Gym Workout</option>
+        <option>Yoga</option>
+    </select>
+
+    <input type="number" id="duration"
+           placeholder="Workout Duration (minutes)">
+
+    <input type="number" id="calories"
+           placeholder="Calories Burned">
+
+    <button onclick="saveData()">Save Activity</button>
+</div>
+
+<div class="card">
+    <h2>Today's Dashboard</h2>
+
+    <div class="summary">
+
+        <div class="summary-box">
+            <h3 id="totalSteps">0</h3>
+            <p>Steps</p>
+        </div>
+
+        <div class="summary-box">
+            <h3 id="totalMinutes">0</h3>
+            <p>Workout Minutes</p>
+        </div>
+
+        <div class="summary-box">
+            <h3 id="totalCalories">0</h3>
+            <p>Calories Burned</p>
+        </div>
+
+    </div>
+
+    <br>
+
+    <h3>Steps Goal (10,000)</h3>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="stepBar">0%</div>
+    </div>
+
+</div>
+
+<div class="card">
+    <h2>Weekly Activity Records</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Steps</th>
+                <th>Workout</th>
+                <th>Minutes</th>
+                <th>Calories</th>
+            </tr>
+        </thead>
+
+        <tbody id="recordTable">
+        </tbody>
+    </table>
+
+</div>
+
+</div>
+
+<script>
+
+let records = JSON.parse(localStorage.getItem("fitnessData")) || [];
+
+document.getElementById("date").value =
+new Date().toISOString().split("T")[0];
+
+function saveData(){
+
+    let date = document.getElementById("date").value;
+    let steps = document.getElementById("steps").value;
+    let workout = document.getElementById("workout").value;
+    let duration = document.getElementById("duration").value;
+    let calories = document.getElementById("calories").value;
+
+    if(!date || !steps || !duration || !calories){
+        alert("Please fill all fields");
+        return;
+    }
+
+    let activity = {
+        date,
+        steps:Number(steps),
+        workout,
+        duration:Number(duration),
+        calories:Number(calories)
+    };
+
+    records.push(activity);
+
+    localStorage.setItem(
+        "fitnessData",
+        JSON.stringify(records)
+    );
+
+    alert("Activity Saved!");
+
+    document.getElementById("steps").value="";
+    document.getElementById("duration").value="";
+    document.getElementById("calories").value="";
+
+    loadDashboard();
+    loadTable();
+}
+
+function loadDashboard(){
+
+    let today =
+    new Date().toISOString().split("T")[0];
+
+    let todayData =
+    records.filter(r => r.date === today);
+
+    let totalSteps =
+    todayData.reduce((sum,r)=>sum+r.steps,0);
+
+    let totalMinutes =
+    todayData.reduce((sum,r)=>sum+r.duration,0);
+
+    let totalCalories =
+    todayData.reduce((sum,r)=>sum+r.calories,0);
+
+    document.getElementById("totalSteps").innerText =
+    totalSteps;
+
+    document.getElementById("totalMinutes").innerText =
+    totalMinutes;
+
+    document.getElementById("totalCalories").innerText =
+    totalCalories;
+
+    let percentage =
+    Math.min((totalSteps/10000)*100,100);
+
+    let bar =
+    document.getElementById("stepBar");
+
+    bar.style.width =
+    percentage + "%";
+
+    bar.innerText =
+    Math.round(percentage) + "%";
+}
+
+function loadTable(){
+
+    let table =
+    document.getElementById("recordTable");
+
+    table.innerHTML="";
+
+    records.slice().reverse().forEach(record=>{
+
+        let row=`
+        <tr>
+            <td>${record.date}</td>
+            <td>${record.steps}</td>
+            <td>${record.workout}</td>
+            <td>${record.duration}</td>
+            <td>${record.calories}</td>
+        </tr>
+        `;
+
+        table.innerHTML += row;
+    });
+}
+
+loadDashboard();
+loadTable();
+
+</script>
+
+</body>
+</html>
